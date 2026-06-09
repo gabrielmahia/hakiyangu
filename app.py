@@ -13,7 +13,7 @@ import json
 import time as _time
 
 st.set_page_config(
-    page_title="Haki Debate AI — Haki za Katiba",
+    page_title="Hakiyangu — Haki Debate AI — Haki za Katiba",
     page_icon="⚖️",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -31,7 +31,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="title">⚖️ Haki Debate AI</div>', unsafe_allow_html=True)
+st.markdown('<div class="title">⚖️ Hakiyangu — Haki Debate AI</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="sub">Mjadala wa AI kuhusu haki za katiba — serikali vs raia &nbsp;'
     '<span class="demo-tag">DEMO</span></div>',
@@ -101,12 +101,19 @@ if st.button("⚔️ Anza Mjadala (Start Debate)", type="primary") and user_ques
                 "system_instruction": {"parts": [{"text": system_role}]},
                 "generation_config": {"temperature": 0.7, "max_output_tokens": 400}
             }
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
-            req = urllib.request.Request(url, data=json.dumps(payload).encode(),
-                                          method="POST", headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                resp = json.loads(r.read())
-            return resp["candidates"][0]["content"]["parts"][0]["text"]
+            for _ver in ("v1", "v1beta"):
+                _url = f"https://generativelanguage.googleapis.com/{_ver}/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+                try:
+                    _req = urllib.request.Request(_url, data=json.dumps(payload).encode(),
+                                                  method="POST", headers={"Content-Type": "application/json"})
+                    with urllib.request.urlopen(_req, timeout=30) as _r:
+                        resp = json.loads(_r.read())
+                    return resp["candidates"][0]["content"]["parts"][0]["text"]
+                except urllib.error.HTTPError as _he:
+                    if _ver == "v1beta":
+                        return f"⚠️ Hitilafu ya API ({_he.code}). Jaribu tena baadaye. / API error ({_he.code}). Please try again later."
+                    continue
+            return "⚠️ Huduma haipatikani sasa hivi. / Service temporarily unavailable."
 
         lang_instr = {
             "Swahili": "Respond entirely in Swahili (Kiswahili). Use simple language a farmer or market trader would understand.",
@@ -128,8 +135,11 @@ Government position basis: {gov_angle}
 Be factual. Cite the actual constitutional articles. Be respectful of citizen rights even while defending government position.
 Keep response under 200 words."""
 
-        gov_response = call_gemini(gov_system,
-            f"Citizen question: '{question}'\n\nExplain the government's position on this, citing the Kenya Constitution.")
+        try:
+            gov_response = call_gemini(gov_system,
+                f"Citizen question: '{question}'\n\nExplain the government's position on this, citing the Kenya Constitution.")
+        except Exception as _e:
+            gov_response = f"⚠️ Hitilafu: {str(_e)[:60]}"
 
         _time.sleep(0.5)
 
@@ -142,8 +152,11 @@ Citizen rights basis: {cit_angle}
 Be factual. Cite the actual constitutional articles. Acknowledge government has some valid interests while defending citizen rights strongly.
 Keep response under 200 words."""
 
-        cit_response = call_gemini(cit_system,
-            f"Citizen question: '{question}'\n\nExplain the citizen's constitutional rights here, citing the Kenya Constitution.")
+        try:
+            cit_response = call_gemini(cit_system,
+                f"Citizen question: '{question}'\n\nExplain the citizen's constitutional rights here, citing the Kenya Constitution.")
+        except Exception as _e:
+            cit_response = f"⚠️ Hitilafu: {str(_e)[:60]}"
 
         _time.sleep(0.5)
 
@@ -155,8 +168,11 @@ You have heard both sides argue. Now provide balanced, practical guidance to hel
 Focus on: what can the citizen do, what their strongest legal protections are, and when to seek formal legal help.
 Keep response under 150 words."""
 
-        synthesis = call_gemini(synth_system,
-            f"Citizen question: '{question}'\n\nGovernment argued: {gov_response[:300]}\n\nRights advocate argued: {cit_response[:300]}\n\nProvide balanced synthesis.")
+        try:
+            synthesis = call_gemini(synth_system,
+                f"Citizen question: '{question}'\n\nGovernment argued: {gov_response[:300]}\n\nRights advocate argued: {cit_response[:300]}\n\nProvide balanced synthesis.")
+        except Exception as _e:
+            synthesis = f"⚠️ Hitilafu ya muhtasari: {str(_e)[:60]}"
 
     # Display
     st.markdown("---")
