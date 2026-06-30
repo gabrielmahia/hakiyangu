@@ -1,6 +1,6 @@
 # ⚖️ Haki Debate AI
 
-**First multi-agent AI debate system for East African constitutional rights.**
+Multi-agent AI debate system for East African constitutional rights — two agents argue opposing interpretations of the same legal question.
 
 Two AI agents argue opposing sides of a constitutional question — then a third synthesizes. 
 In Swahili, English, or both.
