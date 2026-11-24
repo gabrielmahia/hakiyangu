@@ -8,6 +8,8 @@
 # =============================================================================
 
 import streamlit as st
+import html
+import os
 import urllib.request
 import json
 import time as _time
@@ -39,7 +41,16 @@ st.markdown(
 )
 
 # ── API Key ───────────────────────────────────────────────────────────────────
-API_KEY = st.secrets.get("GOOGLE_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
+def _secret(name):
+    """Read a Streamlit secret, falling back to the environment; never crash when no secrets file exists."""
+    try:
+        v = st.secrets.get(name)
+    except Exception:
+        v = None
+    return v or os.environ.get(name, "")
+
+
+API_KEY = _secret("GOOGLE_API_KEY") or _secret("GEMINI_API_KEY")
 if not API_KEY:
     st.warning(
         "⚠️ **Huduma hii bado haijaungwa.** Rudi baadaye.\n\n"
@@ -102,13 +113,13 @@ if st.button("⚔️ Anza Mjadala (Start Debate)", type="primary") and user_ques
                 "generation_config": {"temperature": 0.7, "max_output_tokens": 400}
             }
             for _ver in ("v1beta",):
-                _url = f"https://generativelanguage.googleapis.com/{_ver}/models/gemini-3.5-flash:generateContent?key={API_KEY}"
+                _url = f"https://generativelanguage.googleapis.com/{_ver}/models/gemini-3.5-flash:generateContent"
                 try:
                     _req = urllib.request.Request(_url, data=json.dumps(payload).encode(),
-                                                  method="POST", headers={"Content-Type": "application/json"})
+                                                  method="POST", headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY})
                     with urllib.request.urlopen(_req, timeout=30) as _r:
                         resp = json.loads(_r.read())
-                    return resp["candidates"][0]["content"]["parts"][0]["text"]
+                    return html.escape(resp["candidates"][0]["content"]["parts"][0]["text"])
                 except urllib.error.HTTPError as _he:
                     if _ver == "v1beta":
                         return f"⚠️ Hitilafu ya API ({_he.code}). Jaribu tena baadaye. / API error ({_he.code}). Please try again later."
@@ -139,7 +150,7 @@ Keep response under 200 words."""
             gov_response = call_gemini(gov_system,
                 f"Citizen question: '{question}'\n\nExplain the government's position on this, citing the Kenya Constitution.")
         except Exception as _e:
-            gov_response = f"⚠️ Hitilafu: {str(_e)[:60]}"
+            gov_response = html.escape(f"⚠️ Hitilafu: {str(_e)[:60]}")
 
         _time.sleep(0.5)
 
@@ -156,7 +167,7 @@ Keep response under 200 words."""
             cit_response = call_gemini(cit_system,
                 f"Citizen question: '{question}'\n\nExplain the citizen's constitutional rights here, citing the Kenya Constitution.")
         except Exception as _e:
-            cit_response = f"⚠️ Hitilafu: {str(_e)[:60]}"
+            cit_response = html.escape(f"⚠️ Hitilafu: {str(_e)[:60]}")
 
         _time.sleep(0.5)
 
@@ -172,7 +183,7 @@ Keep response under 150 words."""
             synthesis = call_gemini(synth_system,
                 f"Citizen question: '{question}'\n\nGovernment argued: {gov_response[:300]}\n\nRights advocate argued: {cit_response[:300]}\n\nProvide balanced synthesis.")
         except Exception as _e:
-            synthesis = f"⚠️ Hitilafu ya muhtasari: {str(_e)[:60]}"
+            synthesis = html.escape(f"⚠️ Hitilafu ya muhtasari: {str(_e)[:60]}")
 
     # Display
     st.markdown("---")
