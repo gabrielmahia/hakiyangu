@@ -107,13 +107,13 @@ if st.button("⚔️ Anza Mjadala (Start Debate)", type="primary") and user_ques
     with st.spinner("Watoa hoja wanaandaa hoja... / Preparing arguments..."):
         def call_gemini(system_role, user_msg):
             payload = {
-                "model": "gemini-3.5-flash",
+                "model": "gemini-3.8-flash",
                 "contents": [{"parts": [{"text": user_msg}]}],
                 "system_instruction": {"parts": [{"text": system_role}]},
                 "generation_config": {"temperature": 0.7, "max_output_tokens": 400}
             }
             for _ver in ("v1beta",):
-                _url = f"https://generativelanguage.googleapis.com/{_ver}/models/gemini-3.5-flash:generateContent"
+                _url = f"https://generativelanguage.googleapis.com/{_ver}/models/gemini-3.8-flash:generateContent"
                 try:
                     _req = urllib.request.Request(_url, data=json.dumps(payload).encode(),
                                                   method="POST", headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY})
